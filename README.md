@@ -252,9 +252,9 @@ wallet.signAndSendTransaction(txSkeleton)
 After a successful creation, the application returned information including:
 
 ```text
-Transaction Hash: [ADD DEVNET TRANSACTION HASH IF DESIRED]
-Output Index: [ADD OUTPUT INDEX]
-Spore ID: [ADD SPORE ID]
+Transaction Hash: 0xf4863f809dfbaa462829d05eff06767bcfc09cea42f2b42dc506e589f7350c10
+Output Index: 0
+Spore ID: 0xf516e888a7d0c9da3b9adb97931c2c535a17e1bce05e54da8f5ef53b0e917349
 ```
 
 ---
@@ -389,19 +389,16 @@ My Testnet DOB was successfully created and its content was later retrieved and 
 
 ```text
 Transaction Hash:
-[ADD YOUR TESTNET TRANSACTION HASH]
+0x4505e527bfd907c52dc9e27336c64c58c5be3765977d32d761763e3de7d1b0e1
 
 Output Index:
-[ADD OUTPUT INDEX]
-
-Spore ID:
-[ADD SPORE ID]
+0
 ```
 
 ### CKB Testnet Explorer
 
 ```text
-[ADD DIRECT TESTNET EXPLORER TRANSACTION LINK]
+[View my Testnet transaction on CKB Explorer](https://testnet.explorer.nervos.org/transaction/0x4505e527bfd907c52dc9e27336c64c58c5be3765977d32d761763e3de7d1b0e1)
 ```
 
 The Testnet Explorer provides independent verification that the transaction was submitted to CKB Testnet.
@@ -496,7 +493,7 @@ This helped me understand that storing data inside a CKB Cell requires sufficien
 
 While testing the tutorial, I observed that my setup worked successfully with a `.jpg`/`.jpeg` image below approximately **10 KB**.
 
-Larger images caused capacity-related problems during my attempts.
+During my tests with the available account capacity, larger images triggered capacity-related problems
 
 The example also explicitly specifies:
 
@@ -592,68 +589,63 @@ This showed me that creating/broadcasting a transaction and being able to immedi
 
 ## What I Learned
 
-> **Campaign requirement:** This section must be written personally by me. The campaign specifically asks participants to avoid AI-generated reflections.
-
-I will complete this section using my own experience from the tutorial.
-
-Points I intend to reflect on in my own words:
-
-* What I thought a Digital Object was before beginning the tutorial.
-* What changed in my understanding after seeing the actual image bytes stored and retrieved from a Spore Cell.
-* What I learned from the `Not enough capacity in from infos!` error.
-* What I learned from waiting for the Testnet Cell to become available.
-* How working with OffCKB made local blockchain development easier.
-* What surprised me about CKB's Cell model.
-* The most interesting technical issue I had to debug.
-* How my understanding of DOBs changed after completing the full create → retrieve → render process.
-
 **My personal reflection:**
 
-```text
-[WRITE THIS SECTION YOURSELF BEFORE SUBMISSION]
-```
+Completing the Create-a-DOB tutorial gave me a much clearer understanding of how CKB and Spore Digital Objects work in practice. Before starting, I understood the general idea of putting digital assets on a blockchain, but actually creating a DOB and later retrieving the same image from its Spore Cell made the idea of “on-chain content” much more concrete to me.
+
+One of the first problems I encountered was related to my Windows development environment. The tutorial used the command NETWORK=devnet npm start, but Windows Command Prompt did not recognize the NETWORK assignment. I initially thought there might be something wrong with the project, but I later discovered that the command uses Unix-style environment-variable syntax. I solved it by using set "NETWORK=devnet" && npm start instead. I encountered the same distinction again when moving to Testnet, which taught me to pay closer attention to the shell being used when following development documentation.
+
+Another issue I encountered was the Not enough capacity in from infos! error while trying to create the Spore DOB. This made me investigate the account being used, the available CKB capacity, and the size of the image I was trying to store. This was one of the parts of the tutorial that helped me understand that a Spore DOB is not simply a token containing a link to a file. The actual content occupies space inside a CKB Cell, so sufficient capacity is required to create the object.
+
+The part I found most interesting was seeing how the image moved through the application. The picture was first read as an ArrayBuffer, converted into a Uint8Array, and then passed to Spore SDK as the content of the new Digital Object. After the DOB was created, the application used the transaction hash and output index to find the live Spore Cell, decode its stored data, turn the retrieved bytes back into a browser-readable Blob, and render the image again. Seeing the image reappear from data retrieved from the Cell helped me understand what it means for the content itself to be stored on-chain.
+
+Moving from the local OffCKB Devnet to CKB Testnet also taught me something important. Immediately after creating the Testnet DOB, I tried to check the Spore content and received the message cell not found, please retry later. At first I thought something had failed, but after waiting for some time and trying again, the Cell became available and the image rendered successfully. This showed me that broadcasting a blockchain transaction and being able to retrieve its newly created output are not necessarily immediate events, especially on a shared network such as Testnet.
+
+Overall, the tutorial helped me understand CKB through actual interaction rather than only reading about it. The most important thing I took away from the process is that a Spore DOB can contain the digital content itself inside a CKB Cell. Creating the image, waiting for the transaction, locating the Cell, decoding its data, and rendering the image again made the concept much easier for me to understand. I also learned that debugging blockchain applications can involve several layers at once, including the operating system, development tools, wallet capacity, transaction confirmation, and the blockchain itself.
 
 ---
 
 ## DOBs vs NFTs
 
-> **Before final campaign submission, I will rewrite/expand this section in my own words as part of my personal reflection.**
+One of the main differences I noticed between Spore DOBs and conventional NFTs is how the digital content is handled.
 
-The tutorial demonstrated that a Spore DOB can place its digital content directly inside the data of a CKB Cell.
+Many traditional NFTs represent ownership of a token on the blockchain while the associated image or media may be stored somewhere else and referenced through metadata or a URL. With the Spore DOB used in this tutorial, the actual content is stored directly inside a CKB Cell.
 
-The Spore Cell includes information such as:
+A Spore Cell can contain information such as:
 
-```text
 content-type
 content
 cluster_id (optional)
-```
 
-The tutorial also states that the fields of a Spore Cell are immutable after creation.
+In my case, the JPEG image was converted into binary data and stored as the content of the Spore Cell. When I later clicked Check Spore Content, the application located the Cell using the transaction hash and output index, retrieved the stored data, decoded it, and reconstructed the image in the browser.
 
-A major concept I observed during the tutorial is therefore the distinction between:
+This made the difference much clearer to me. The image being displayed was not simply being loaded again from the original file on my computer or from an external image URL. It was reconstructed from the content retrieved from the Digital Object on CKB.
 
-```text
-Digital token
-pointing toward external content
-```
+Another characteristic I found interesting is that the fields of a Spore Cell are immutable after the DOB is created. This gives the object a strong connection between its blockchain identity and the content stored inside it.
 
-and:
+From this tutorial, I now understand a Spore DOB as more than just a token representing an asset. It can be a self-contained digital object whose actual content and ownership exist within CKB's Cell model.
 
-```text
-Digital object
-whose content itself is encoded into
-the blockchain Cell
-```
+The simplest way I would describe the difference is:
 
-My final comparison of DOBs and conventional NFTs will be written from my own understanding after completing the tutorial.
+Typical NFT:
+Blockchain token
+      ↓
+Metadata
+      ↓
+Often references external content
+
+Spore DOB:
+CKB Cell
+      ↓
+Digital object data
+      ↓
+Actual content stored on-chain
+
+This was one of the most interesting concepts I learned from the tutorial because I was able to see the complete process myself: create the object, store the image content, retrieve the Cell, decode the content, and render the same image again.
 
 ---
 
 ## Potential Use Case
-
-```text
-## Potential Use Case — Verifiable On-Chain Digital Certificates
 
 One interesting use case I see for Spore DOBs is the creation of **verifiable digital certificates whose actual content is stored on-chain**.
 
@@ -700,8 +692,6 @@ Create → Store On-Chain → Retrieve → Verify → Render
 
 This could make Spore DOBs useful for digital certificates, educational credentials, licenses, membership records, event credentials, and other digital objects where long-term verifiability and content integrity are important.
 
-```
-
 ---
 
 ## Proof Screenshots
@@ -710,21 +700,11 @@ The proof files for this campaign are organized as follows:
 
 ```text
 proof/
-│
-├── Screeenshots
+├── Screenshot (1).png
+├── Screenshot (2).png
+├── ...
+└── Screenshot (43).png
 ```
-
-### Proof 1 — OffCKB Devnet Running
-
-### Proof 2 — DOB Created on Devnet
-
-### Proof 3 — Spore Content Rendered on Devnet
-
-### Proof 4 — DOB Created on Testnet
-
-### Proof 5 — Spore Content Retrieved and Rendered on Testnet
-
-### Proof 6 — Testnet Explorer Verification
 
 ---
 
@@ -803,35 +783,6 @@ Nervos Network. CKB Testnet Faucet.
 https://faucet.nervos.org/
 
 Used to obtain Testnet CKB for the development account used when testing the Create-a-DOB application on CKB Testnet.
-
-### Nervos CKB
-
-* Nervos CKB Documentation
-  https://docs.nervos.org/
-
-* Create a Digital Object Using Spore Protocol
-  https://docs.nervos.org/docs/dapp/create-dob
-
-* OffCKB Quick Start
-  https://docs.nervos.org/docs/getting-started/quick-start
-
-### Spore Protocol
-
-* Spore Protocol Overview
-  https://docs.nervos.org/docs/assets-token-standards/spore-protocol
-
-* Spore Documentation
-  https://docs.spore.pro/
-
-### Source Code
-
-* Nervos Documentation Repository
-  https://github.com/nervosnetwork/docs.nervos.org
-
-* Create-a-DOB Example
-  https://github.com/nervosnetwork/docs.nervos.org/tree/master/examples/dApp/create-dob
-
----
 
 ## Completion Status
 
